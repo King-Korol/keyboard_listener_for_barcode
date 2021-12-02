@@ -29,55 +29,115 @@ class MyStatefulWidget extends StatefulWidget {
 
 class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   final FocusNode _focusNode = FocusNode();
+  final FocusNode _focusNodeText = FocusNode();
 
-  String _controller = '';
+  TextEditingController? _controller;
 
   String? _message;
 
   @override
+  void initState() {
+    _controller ??= TextEditingController(text: '');
+    super.initState();
+  }
+
+  @override
   void dispose() {
     _focusNode.dispose();
+    _focusNodeText.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    FocusScope.of(context).requestFocus(_focusNode);
+    final heigh = MediaQuery.of(context).size.height;
+    final width = MediaQuery.of(context).size.width;
     final TextTheme textTheme = Theme.of(context).textTheme;
-    return Container(
-      color: Colors.white,
-      alignment: Alignment.center,
-      child: DefaultTextStyle(
-        style: textTheme.bodyText1!,
-        child: RawKeyboardListener(
-          focusNode: _focusNode,
-          onKey: (RawKeyEvent event) {
-            if (event is RawKeyDownEvent) {
-              if (event.physicalKey == PhysicalKeyboardKey.enter) {
-                print('ENTER');
-                setState(() {
-                  _message = _controller;
-                  _controller = '';
-                });
-              } else {
-                print(
-                    '_handleKeyEvent Event data keyLabel ${event.data.keyLabel}');
-                _controller += event.data.keyLabel;
-              }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Container(
+        height: heigh,
+        width: width,
+        color: Colors.red[300],
+        alignment: Alignment.center,
+        child: DefaultTextStyle(
+          style: textTheme.bodyText1!,
+          child: RawKeyboardListener(
+            focusNode: _focusNode,
+            onKey: (RawKeyEvent event) {
+              _controller?.text = '';
+              if (event is RawKeyDownEvent) {
+                if (event.physicalKey == PhysicalKeyboardKey.enter) {
+                  print('ENTER');
+                  setState(() {
+                    _message = _controller?.text;
+                    // _controller?.text = '';
+                  });
+                } else {
+                  print(
+                      '_handleKeyEvent Event data keyLabel ${event.data.keyLabel}');
+                  _controller?.text += event.data.keyLabel;
+                }
 
-              print('controller: $_controller');
-            }
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                _message ?? 'Press a key',
-              ),
-              Text(
-                '${_message?.length}',
-              ),
-            ],
+                print('controller: $_controller');
+              }
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: width * 0.8,
+                  child: TextFormField(
+                    controller: _controller,
+                    focusNode: _focusNodeText,
+                    keyboardType: TextInputType.text,
+                    textInputAction: TextInputAction.done,
+                    onTap: () {
+                      print('onTap');
+                      _focusNode.unfocus();
+                      FocusScope.of(context).requestFocus(_focusNodeText);
+                      // SystemChannels.textInput.invokeMethod('TextInput.show');
+                    },
+                    onChanged: (value) {
+                      print('onChanged');
+                    },
+                    onFieldSubmitted: (value) {
+                      print('onFieldSubmitted value: $value');
+                      // SystemChannels.textInput.invokeMethod('TextInput.hide');
+                      _focusNodeText.unfocus();
+                      _focusNode.requestFocus();
+                    },
+                    onSaved: (newValue) {
+                      print('onSaved newValue: $newValue');
+                      // SystemChannels.textInput.invokeMethod('TextInput.hide');
+                      _focusNodeText.unfocus();
+                      _focusNode.requestFocus();
+                    },
+                  ),
+                ),
+                Text(
+                  '${_message?.length}',
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (!_focusNode.hasFocus) {
+                      _focusNodeText.unfocus();
+                      // SystemChannels.textInput.invokeMethod('TextInput.hide');
+                      FocusScope.of(context).requestFocus(_focusNode);
+                      print('request focus _focusNode');
+                    } else {
+                      _focusNode.unfocus();
+                      _focusNodeText.requestFocus();
+                      print('_focusNodeText.requestFocus');
+                    }
+                  },
+                  child: Text('Change Focus'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
