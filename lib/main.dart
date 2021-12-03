@@ -5,9 +5,7 @@ void main() => runApp(const MyApp());
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
-
   static const String _title = 'RawKeyboardListener';
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -22,7 +20,6 @@ class MyApp extends StatelessWidget {
 
 class MyStatefulWidget extends StatefulWidget {
   const MyStatefulWidget({Key? key}) : super(key: key);
-
   @override
   State<MyStatefulWidget> createState() => _MyStatefulWidgetState();
 }
@@ -30,11 +27,8 @@ class MyStatefulWidget extends StatefulWidget {
 class _MyStatefulWidgetState extends State<MyStatefulWidget> {
   final FocusNode _focusNode = FocusNode();
   final FocusNode _focusNodeText = FocusNode();
-
   TextEditingController? _controller;
-
   String? _message;
-
   @override
   void initState() {
     _controller ??= TextEditingController(text: '');
@@ -68,7 +62,6 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
           child: RawKeyboardListener(
             focusNode: _focusNode,
             onKey: (RawKeyEvent event) {
-              _controller?.text = '';
               if (event is RawKeyDownEvent) {
                 if (event.physicalKey == PhysicalKeyboardKey.enter) {
                   print('ENTER');
@@ -81,7 +74,6 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
                       '_handleKeyEvent Event data keyLabel ${event.data.keyLabel}');
                   _controller?.text += event.data.keyLabel;
                 }
-
                 print('controller: $_controller');
               }
             },
@@ -99,20 +91,20 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
                       print('onTap');
                       _focusNode.unfocus();
                       FocusScope.of(context).requestFocus(_focusNodeText);
-                      // SystemChannels.textInput.invokeMethod('TextInput.show');
+                      SystemChannels.textInput.invokeMethod('TextInput.show');
                     },
                     onChanged: (value) {
                       print('onChanged');
                     },
                     onFieldSubmitted: (value) {
                       print('onFieldSubmitted value: $value');
-                      // SystemChannels.textInput.invokeMethod('TextInput.hide');
+                      SystemChannels.textInput.invokeMethod('TextInput.hide');
                       _focusNodeText.unfocus();
                       _focusNode.requestFocus();
                     },
                     onSaved: (newValue) {
                       print('onSaved newValue: $newValue');
-                      // SystemChannels.textInput.invokeMethod('TextInput.hide');
+                      SystemChannels.textInput.invokeMethod('TextInput.hide');
                       _focusNodeText.unfocus();
                       _focusNode.requestFocus();
                     },
@@ -123,18 +115,27 @@ class _MyStatefulWidgetState extends State<MyStatefulWidget> {
                 ),
                 ElevatedButton(
                   onPressed: () {
-                    if (!_focusNode.hasFocus) {
+                    setState(() {
+                      SystemChannels.textInput.invokeMethod('TextInput.hide');
                       _focusNodeText.unfocus();
-                      // SystemChannels.textInput.invokeMethod('TextInput.hide');
-                      FocusScope.of(context).requestFocus(_focusNode);
-                      print('request focus _focusNode');
-                    } else {
+                      _focusNode.requestFocus();
+                      _controller?.text = '';
+                      _message = '';
+                      print('!_focusNode.hasFocus');
+                    });
+                  },
+                  child: const Text('Change Focus'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
                       _focusNode.unfocus();
                       _focusNodeText.requestFocus();
-                      print('_focusNodeText.requestFocus');
-                    }
+                      SystemChannels.textInput.invokeMethod('TextInput.show');
+                      print('!_focusNodeText.hasFocus');
+                    });
                   },
-                  child: Text('Change Focus'),
+                  child: const Text('Change Focus'),
                 ),
               ],
             ),
